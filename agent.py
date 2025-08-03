@@ -1,3 +1,6 @@
+import asyncio
+import socketio
+from datetime import datetime
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import AgentSession, Agent, RoomInputOptions
@@ -17,13 +20,21 @@ class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
             instructions=(
-                "You are a helpful English to Spanish translator. "
-                "When the user speaks in English, translate what they said into Spanish. "
-                "Provide natural, conversational Spanish translations that maintain the meaning and tone of the original English. "
-                "If the user asks questions or makes requests in English, respond with the Spanish translation. "
-                "Keep your responses concise and natural-sounding Spanish."
+                "You are a helpful conversational AI assistant. "
+                "Speak naturally in English and have friendly conversations. "
+                "Respond to questions and engage naturally. "
+                "If the user asks about analytics, provide conversation insights."
             )
         )
+        self.sio = socketio.AsyncClient()
+        self.metrics = {
+            'total_time': 0,
+            'user_time': 0,
+            'agent_time': 0,
+            'turns': 0,
+            'start_time': None
+        }
+        self.current_turn_start = None
 
 
 async def entrypoint(ctx: agents.JobContext):
@@ -35,21 +46,27 @@ async def entrypoint(ctx: agents.JobContext):
         turn_detection=MultilingualModel(),
     )
 
+    agent = Assistant()
+    
+    # Connect to Socket.IO server
+    await agent.sio.connect('http://localhost:5000')
+    
     await session.start(
         room=ctx.room,
-        agent=Assistant(),
+        agent=agent,
         room_input_options=RoomInputOptions(
-            # LiveKit Cloud enhanced noise cancellation
-            # - If self-hosting, omit this parameter
-            # - For telephony applications, use `BVCTelephony` for best results
             noise_cancellation=noise_cancellation.BVC(), 
         ),
     )
 
     await ctx.connect()
+    
+    # Start analytics
+    agent.metrics['start_time'] = datetime.now()
+    await agent.sio.emit('metrics_update', agent.metrics)
 
     await session.generate_reply(
-        instructions="Greet the user and explain that you are an English to Spanish translator. Tell them they can speak in English and you will translate to Spanish."
+        instructions="Greet the user and explain you're a conversational AI with analytics. Tell them to open dashboard.html to see live metrics."
     )
 
 
