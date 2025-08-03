@@ -17,7 +17,7 @@ load_dotenv()
 
 
 class Assistant(Agent):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__(
             instructions=(
                 "You are a helpful conversational AI assistant. "

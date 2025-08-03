@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard</title>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    #status { margin-bottom: 1em; color: green; }
+    .metric { margin: 0.5em 0; }
+    .label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Agent Analytics Dashboard</h1>
+  <div id="status">Connecting...</div>
+  <div id="metrics">
+    <div class="metric"><span class="label">Total Time:</span> <span id="total_time">0</span></div>
+    <div class="metric"><span class="label">User Time:</span> <span id="user_time">0</span></div>
+    <div class="metric"><span class="label">Agent Time:</span> <span id="agent_time">0</span></div>
+    <div class="metric"><span class="label">Turns:</span> <span id="turns">0</span></div>
+    <div class="metric"><span class="label">Session Start:</span> <span id="start_time">-</span></div>
+  </div>
+
+  <script>
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      document.getElementById('status').textContent = "Connected!";
+      document.getElementById('status').style.color = "green";
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('status').textContent = "Disconnected!";
+      document.getElementById('status').style.color = "red";
+    });
+
+    socket.on('welcome', (data) => {
+      document.getElementById('status').textContent = data.message;
+    });
+
+    socket.on('metrics_update', (metrics) => {
+      document.getElementById('total_time').textContent = metrics.total_time;
+      document.getElementById('user_time').textContent = metrics.user_time;
+      document.getElementById('agent_time').textContent = metrics.agent_time;
+      document.getElementById('turns').textContent = metrics.turns;
+      document.getElementById('start_time').textContent = metrics.start_time || '-';
+    });
+  </script>
+</body>
+</html>
