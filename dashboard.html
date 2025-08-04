@@ -1,37 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Analytics Dashboard</title>
+  <title>Panel de Análisis - Español</title>
   <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 2em; }
     #status { margin-bottom: 1em; color: green; }
     .metric { margin: 0.5em 0; }
     .label { font-weight: bold; }
+    #feedback-list { margin-top: 1em; padding-left: 1.5em; }
+    .feedback-item { margin-bottom: 0.5em; color: #b22222; }
   </style>
 </head>
 <body>
-  <h1>Agent Analytics Dashboard</h1>
-  <div id="status">Connecting...</div>
+  <h1>Panel de Análisis de Gramática Española</h1>
+  <div id="status">Conectando...</div>
   <div id="metrics">
-    <div class="metric"><span class="label">Total Time:</span> <span id="total_time">0</span></div>
-    <div class="metric"><span class="label">User Time:</span> <span id="user_time">0</span></div>
-    <div class="metric"><span class="label">Agent Time:</span> <span id="agent_time">0</span></div>
-    <div class="metric"><span class="label">Turns:</span> <span id="turns">0</span></div>
-    <div class="metric"><span class="label">Session Start:</span> <span id="start_time">-</span></div>
+    <div class="metric"><span class="label">Tiempo Total:</span> <span id="total_time">0</span></div>
+    <div class="metric"><span class="label">Tiempo del Usuario:</span> <span id="user_time">0</span></div>
+    <div class="metric"><span class="label">Tiempo del Asistente:</span> <span id="agent_time">0</span></div>
+    <div class="metric"><span class="label">Turnos:</span> <span id="turns">0</span></div>
+    <div class="metric"><span class="label">Errores Gramaticales:</span> <span id="error_count">0</span></div>
+    <div class="metric"><span class="label">Inicio de Sesión:</span> <span id="start_time">-</span></div>
   </div>
+
+  <h2>Retroalimentación de Gramática</h2>
+  <ul id="feedback-list"></ul>
 
   <script>
     const socket = io('http://localhost:5000');
 
     socket.on('connect', () => {
-      document.getElementById('status').textContent = "Connected!";
+      document.getElementById('status').textContent = "¡Conectado!";
       document.getElementById('status').style.color = "green";
     });
 
     socket.on('disconnect', () => {
-      document.getElementById('status').textContent = "Disconnected!";
+      document.getElementById('status').textContent = "¡Desconectado!";
       document.getElementById('status').style.color = "red";
     });
 
@@ -44,8 +50,29 @@
       document.getElementById('user_time').textContent = metrics.user_time;
       document.getElementById('agent_time').textContent = metrics.agent_time;
       document.getElementById('turns').textContent = metrics.turns;
+      document.getElementById('error_count').textContent = metrics.error_count || 0;
       document.getElementById('start_time').textContent = metrics.start_time || '-';
+      // Update feedback
+      const feedbackList = document.getElementById('feedback-list');
+    feedbackList.innerHTML = '';
+    if (metrics.feedback_messages && metrics.feedback_messages.length > 0) {
+    metrics.feedback_messages.forEach(entry => {
+        // Support old and new formats for backwards compatibility
+        let msg, fb;
+        if (typeof entry === 'string') {
+        msg = '';
+        fb = entry;
+        } else {
+        msg = entry.message || '';
+        fb = entry.feedback || '';
+        }
+        const li = document.createElement('li');
+        li.className = "feedback-item";
+        li.innerHTML = msg ? `<strong>Mensaje:</strong> "${msg}"<br><span>${fb}</span>` : fb;
+        feedbackList.appendChild(li);
     });
-  </script>
+    }
+});
+</script>
 </body>
 </html>

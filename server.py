@@ -10,7 +10,7 @@ sio.attach(app)
 @sio.event
 async def connect(sid, environ):
     print(f"Client connected: {sid}")
-    await sio.emit('welcome', {'message': 'Connected to analytics dashboard'}, room=sid)
+    await sio.emit('welcome', {'message': 'Conectado al panel de análisis'}, room=sid)
 
 @sio.event
 async def disconnect(sid):
