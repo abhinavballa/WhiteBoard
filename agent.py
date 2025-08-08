@@ -15,23 +15,39 @@ from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 load_dotenv()
 
-def analyze_grammar(spanish_text):
-    # Placeholder: Replace with actual grammar-checking logic or API
-    # For demo, we'll "detect" error if sentence doesn't end with a period
-    feedback = []
-    error_flag = False
-    if not spanish_text.strip().endswith('.'):
-        feedback.append("Recuerda terminar las frases con un punto final.")
-        error_flag = True
-    # You could expand this to call a Spanish grammar API or LLM here
-    return feedback, error_flag
+async def get_grammar_feedback(llm, spanish_text):
+    # Prompt OpenAI to provide a grammar correction in English.
+    prompt = (
+        f"You are a Spanish language tutor. A student said the following sentence in Spanish:\n\n"
+        f"\"{spanish_text}\"\n\n"
+        f"Detect any grammar, verb conjugation, gender agreement, or sentence structure errors. "
+        f"Respond in this format:\n"
+        f"Spanish sentence: <the original sentence>\n"
+        f"Error description (English): <brief explanation of mistake(s) in English, or 'No errors found.' if correct>"
+    )
+    response = await llm.complete(prompt)
+    # Parse response (expecting two lines: Spanish sentence and Error description)
+    lines = response.text.strip().split("\n")
+    sentence = ""
+    error_desc = ""
+    for line in lines:
+        if line.lower().startswith("spanish sentence:"):
+            sentence = line[len("Spanish sentence:"):].strip()
+        elif line.lower().startswith("error description"):
+            error_desc = line.split(":", 1)[1].strip()
+    # Fallback if format doesn't match
+    if not sentence:
+        sentence = spanish_text
+    if not error_desc:
+        error_desc = response.text.strip()
+    return sentence, error_desc
 
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
             instructions=(
                 "Eres un asistente conversacional de IA que habla solo en español. "
-                "Corrige los errores gramaticales del usuario y proporciona retroalimentación constructiva en español. "
+                "Corrige los errores gramaticales del usuario y proporciona retroalimentación constructiva en inglés. "
                 "Sé amable y motiva al usuario a mejorar su gramática."
             )
         )
@@ -42,25 +58,25 @@ class Assistant(Agent):
             'agent_time': 0,
             'turns': 0,
             'error_count': 0,
-            'feedback_messages': [],  # Now a list of dicts
+            'feedback_messages': [],
             'start_time': None
         }
         self.current_turn_start = None
 
     async def on_user_message(self, user_text):
-        feedback, error = analyze_grammar(user_text)
-        if error:
+        sentence, error_desc = await get_grammar_feedback(self.llm, user_text)
+        error_flag = error_desc.lower() != "no errors found."
+        if error_flag:
             self.metrics['error_count'] += 1
-            for fb in feedback:
-                self.metrics['feedback_messages'].append({
-                    'message': user_text,
-                    'feedback': fb
-                })
+        self.metrics['feedback_messages'].append({
+            'message': sentence,
+            'feedback': error_desc
+        })
         await self.sio.emit('metrics_update', self.metrics)
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
-        stt=deepgram.STT(model="nova-3", language="es"),
+        stt=deepgram.STT(model="nova-3", language="multi"),
         llm=openai.LLM(model="gpt-4o-mini"),
         tts=cartesia.TTS(model="sonic-2", voice="c0c374aa-09be-42d9-9828-4d2d7df86962"),
         vad=silero.VAD.load(),
