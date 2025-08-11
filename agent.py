@@ -1,5 +1,6 @@
 import asyncio
 import socketio
+import os
 from datetime import datetime
 from dotenv import load_dotenv
 from livekit import agents
@@ -13,7 +14,9 @@ from livekit.plugins import (
 )
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+# Load environment variables
 load_dotenv()
+ROOM_NAME = os.getenv("ROOM_NAME", "spanish-grammar-room")  # fallback to default room name
 
 async def get_grammar_feedback(llm, spanish_text):
     # Prompt OpenAI to provide a grammar correction in English.
@@ -89,7 +92,7 @@ async def entrypoint(ctx: agents.JobContext):
     await agent.sio.connect('http://localhost:5000')
     
     await session.start(
-        room=ctx.room,
+        room=ctx.room if hasattr(ctx, "room") and ctx.room else ROOM_NAME,
         agent=agent,
         room_input_options=RoomInputOptions(
             noise_cancellation=noise_cancellation.BVC(), 

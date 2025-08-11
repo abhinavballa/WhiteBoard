@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import { MetricCard } from "../components/MetricCard";
 import { ConnectionStatus } from "../components/ConnectionStatus";
 import { FeedbackList } from "../components/FeedbackList";
+import { LiveKitVoiceInput } from "../components/LiveKitVoiceInput";
 
 type FeedbackMessage = {
   message: string;
@@ -36,19 +37,20 @@ const defaultMetrics: Metrics = {
 export default function DashboardPage() {
   const [connected, setConnected] = useState(false);
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics);
+  const socketRef = useRef<any>(null);
 
   useEffect(() => {
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("welcome", () => setConnected(true));
-    socket.on("metrics_update", (newMetrics: Metrics) => setMetrics({ ...metrics, ...newMetrics }));
+    socket.on("metrics_update", (newMetrics: Metrics) => setMetrics(prev => ({ ...prev, ...newMetrics })));
 
     return () => {
       socket.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -56,6 +58,7 @@ export default function DashboardPage() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-4 text-gray-800">Spanish Grammar Analysis Dashboard</h1>
         <ConnectionStatus connected={connected} />
+        <LiveKitVoiceInput />
         <div className="flex flex-wrap gap-2 mt-6">
           <MetricCard label="Total Time" value={metrics.total_time} />
           <MetricCard label="User Time" value={metrics.user_time} />

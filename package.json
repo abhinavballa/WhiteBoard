@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "livekit-client": "^2.15.4",
     "socket.io-client": "^4.8.1"
   }
 }

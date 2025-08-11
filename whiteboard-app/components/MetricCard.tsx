@@ -1,13 +1,13 @@
 import React from "react";
 
-type Props = {
+type MetricCardProps = {
   label: string;
-  value: string | number | null;
+  value: string | number;
 };
 
-export const MetricCard: React.FC<Props> = ({ label, value }) => (
-  <div className="flex flex-col items-start bg-white rounded shadow p-4 w-40 border-l-4 border-blue-400">
-    <span className="font-semibold text-sm text-gray-600">{label}</span>
-    <span className="text-xl font-bold text-gray-900 mt-1">{value}</span>
+export const MetricCard: React.FC<MetricCardProps> = ({ label, value }) => (
+  <div className="bg-white p-4 rounded shadow w-40 mb-2">
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className="text-lg font-bold">{value}</div>
   </div>
 );

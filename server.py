@@ -2,7 +2,6 @@ import asyncio
 import socketio
 from aiohttp import web
 
-# Create Socket.IO server
 sio = socketio.AsyncServer(cors_allowed_origins='*')
 app = web.Application()
 sio.attach(app)
@@ -18,8 +17,8 @@ async def disconnect(sid):
 
 @sio.event
 async def metrics_update(sid, data):
-    print(f"Received metrics: {data}")
-    await sio.emit('metrics_update', data, skip_sid=sid)
+    print(f"Received metrics from agent: {data}")
+    await sio.emit('metrics_update', data)
 
 async def start_server():
     runner = web.AppRunner(app)
@@ -30,4 +29,4 @@ async def start_server():
     await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
-    asyncio.run(start_server()) 
+    asyncio.run(start_server())
