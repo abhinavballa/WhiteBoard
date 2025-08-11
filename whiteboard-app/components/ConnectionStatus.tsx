@@ -5,7 +5,13 @@ type Props = {
 };
 
 export const ConnectionStatus: React.FC<Props> = ({ connected }) => (
-  <div className={`py-2 px-4 rounded text-white ${connected ? "bg-green-500" : "bg-red-500"}`}>
-    {connected ? "Connected to analysis server" : "Disconnected"}
+  <div className="mb-4">
+    <span
+      className={`px-2 py-1 rounded text-sm font-mono ${
+        connected ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+      }`}
+    >
+      {connected ? "Connected to server" : "Disconnected"}
+    </span>
   </div>
 );
